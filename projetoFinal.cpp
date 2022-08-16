@@ -4,55 +4,60 @@
 #include <stdlib.h>
 #include <GL/glut.h>
 
-float translatex = 47;
-float translatey = 2; 
-float ang1 = 0, ang2 = 0;
-int wJogador = 6;
-int velocidade = 2;
 int vidas = 3;
-int auxCorObj = 1; //Auxiliar pra função de cor dos objetos
-int auxCorBcg = 1; //Auxiliar pra função de cor do background
+float translatex = 47;
+float translatey = 2;
 char aux[5];
 
-int width, height; // Variaveis pra pegar os tamanhos da janela atual
-float widX, heiY; //Pegar proporção dos tamanhos da janela atual com os valores definidos no plano
-
-//Variaveis das cores
-//De colorX[0] até colorX[6] são as cores dos obstáculos.
-//ColorX[7] é a cor do background, e colorX[8] a cor do objeto jogador
+// Variáveis de tamanho e proporção da janela, para interesse na detecção do mouse
+int width, height; 
+float widX, heiY; 
+//Controlador de qual tela o jogo vai mostrar
+int controllerMenu = 1; 
+// Variável pros textos do jogo
+char* genericText;
+//Vetores com as cores e indicação se as cartas estão viradas
 float BcolorR[] = {1.0, 0.0, 0.0, 1.0, 0.556900};
 float BcolorG[] = {0.0, 1.0, 0.0, 1.0, 0.419600};
 float BcolorB[] = {0.0, 0.0, 1.0, 0.0, 0.137300};
-
 float colorR[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 float colorG[] = {0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2};
 float colorB[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 bool numShow[] = {true, true, true, true, true, true, true, true, true, true};
 
+//Declarações das funções
+void Inicializa(void);
+void DesenhaTexto(void *font, char vidas);
+void DesenhaTextoStroke(void *font, char *string);
+void DesenhaObstaculo();
+void DesenhaJogo();
+void TeclasEspeciais(int key, int x, int y);
+void Teclado (unsigned char key, int x, int y);
+void Desenha();
+void DesenhaMenu();
+
+
+
+
+
 void Inicializa(void){
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	//glColor3f(colorR[7], colorG[7], colorB[7]);
 	glMatrixMode(GL_PROJECTION);
 	gluOrtho2D(0.0,200.0,0.0,200.0);
-	printf("Criado por: Eduardo de Oliveira e Paulo Cesar\n");
-	printf("Setas do teclado para se movimentar\n");
-	printf("clicar nos quadrilateros alteram suas cores\nclicar no jogador altera a cor dos demais obstaculos\nclicar no cenario altera a cor de fundo\n");
-	printf("Chegue ate o final (linha vermelha) para ganhar!\n");
 }
 
-void colisaoVidas(){
-	vidas--;
-	if(vidas==0){
-		printf("PERDEU! TENTE NOVAMENTE!");
-		exit(0);
-	}
-	printf("VIDAS RESTANTES %d\n", vidas);
-}
 
 void DesenhaTexto(void *font, char vidas) 
 {
 	// Exibe caractere a caractere
 		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, vidas); 
+}
+
+void DesenhaTextoStroke(void *font, char *string) 
+{  
+	// Exibe caractere a caractere
+	while(*string)
+		glutStrokeCharacter(GLUT_STROKE_ROMAN,*string++); 
 }
 
 void DesenhaObstaculo(){
@@ -122,11 +127,9 @@ void DesenhaObstaculo(){
 
 
 
-void Desenha(){
-	//Caso os tamanhos da janela mudem, eu posso facilmente adaptar os valores aqui
+void DesenhaJogo(){
 	sprintf(aux, "%d", vidas);
-	width = glutGet(GLUT_WINDOW_WIDTH); height = glutGet(GLUT_WINDOW_HEIGHT);
-	widX = width/100.0f; heiY = (height/100.0f);
+	
 	
 	//pra ajudar na mudança da cor do plano de fundo
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
@@ -203,34 +206,7 @@ void Desenha(){
 
 void TeclasEspeciais(int key, int x, int y)
 {
-	// Move o corpo
-	if(key == GLUT_KEY_LEFT)	{
-		translatex-=velocidade;
-		if ( translatex < 0 )
-			translatex = 0; 
-	}
-	if(key == GLUT_KEY_RIGHT){
-		translatex+=velocidade;
-		if ( translatex > 94 )
-			translatex = 94; 
-	} 
 	
-	// Rotaciona antebraço
-	if(key == GLUT_KEY_DOWN){
-		translatey-=velocidade;
-		if ( translatey < 0 )
-			translatey = 0;
-	}
-	if(key == GLUT_KEY_UP)
-		translatey+=velocidade;    
-		if ( translatey > 94 )
-			translatey = 94; 
-			
-	//ganhar o jogo
-	if((translatey + wJogador)>99){
-		printf("GANHOU!");
-		exit(0);
-	}
 	
 	glutPostRedisplay();
 }
@@ -316,43 +292,28 @@ void Teclado (unsigned char key, int x, int y)
 	glutPostRedisplay();
 }
 
-void alteraCorJogador(){
-	if(colorR[8] == 1.0f){
-		colorR[8] = 0.0;
-        colorG[8] = 1.0;
-        colorB[8] = 0.0;
-	} else if(colorG[8] == 1.0f){
-		colorR[8] = 0.0;
-        colorG[8] = 0.0;
-        colorB[8] = 1.0;
-	} else {
-		colorR[8] = 1.0;
-        colorG[8] = 0.0;
-        colorB[8] = 0.0;
+
+
+void Desenha(){
+	// Pegando os valores do tamanho da janela (útil caso mude de tamanho)
+	width = glutGet(GLUT_WINDOW_WIDTH); height = glutGet(GLUT_WINDOW_HEIGHT);
+	widX = width/100.0f; heiY = (height/100.0f);
+	// Controlador de qual parte do jogo mostrar
+	switch(controllerMenu){
+		case 0: 
+			DesenhaMenu();
+			break;
+		case 1:
+			DesenhaJogo();
+			break;
+		default:
+			exit(0);
 	}
+	glutSwapBuffers();
 }
 
-void alteraCorBackground(){
-	switch(auxCorBcg){
-		case 1:
-			colorR[7] = 0.847059;
-         	colorG[7] = 0.847059;
-         	colorB[7] = 0.74902;
-			auxCorBcg++;
-			break;
-		case 2:
-			colorR[7] = 0.81;
-         	colorG[7] = 0.71;
-         	colorB[7] = 0.23;
-			auxCorBcg++;
-			break;
-		case 3: 
-			colorR[7] = 0.2;
-         	colorG[7] = 0.2;
-         	colorB[7] = 0.2;
-			auxCorBcg=1;
-			break;
-	}
+void DesenhaMenu(){
+	
 }
 /*
 void GerenciaMouse(int button, int state, int x, int y)
@@ -387,15 +348,16 @@ void GerenciaMouse(int button, int state, int x, int y)
 int main()
 {
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);     
+	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB );
 	glutInitWindowSize(400,400);  
 	glutInitWindowPosition(600,200);  
-	glutCreateWindow("Desenho de objeto modelado com transformações hierárquicas"); 
+	glutCreateWindow("Jogo da memória e aprendizado ecológico"); 
 	glutDisplayFunc(Desenha);  
 	glutKeyboardFunc(Teclado);
 //	glutMouseFunc(GerenciaMouse);
 //	glutSpecialFunc(TeclasEspeciais);
 	
-	//Declaração inicial dos tamanhos da janela, necessário para funções de mudança de cor
+	//Declaração inicial dos tamanhos da janela, útil para função do mouse
 	width = glutGet(GLUT_WINDOW_WIDTH); height = glutGet(GLUT_WINDOW_HEIGHT);
 	widX = width/100.0f; heiY = (height/100.0f);
 	
