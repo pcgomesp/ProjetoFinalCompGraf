@@ -1,4 +1,4 @@
-//Alunos: Paulo Cesar Pereira Gomes; Eduardo de Oliveira 
+//Alunos: Paulo Cesar Pereira Gomes; Eduardo de Oliveira ;Aurelio Jose ; Joao Paulo Brites
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,14 +9,14 @@ float translatex = 47;
 float translatey = 2;
 char aux[5];
 
-// Variáveis de tamanho e proporção da janela, para interesse na detecção do mouse
+// Vari?veis de tamanho e propor??o da janela, para interesse na detec??o do mouse
 int width, height; 
 float widX, heiY; 
 //Controlador de qual tela o jogo vai mostrar
 int controllerMenu = 1; 
-// Variável pros textos do jogo
+// Vari?vel pros textos do jogo
 char* genericText;
-//Vetores com as cores e indicação se as cartas estão viradas
+//Vetores com as cores e indica??o se as cartas est?o viradas
 float BcolorR[] = {1.0, 0.0, 0.0, 1.0, 0.556900};
 float BcolorG[] = {0.0, 1.0, 0.0, 1.0, 0.419600};
 float BcolorB[] = {0.0, 0.0, 1.0, 0.0, 0.137300};
@@ -25,7 +25,7 @@ float colorG[] = {0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2};
 float colorB[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 bool numShow[] = {true, true, true, true, true, true, true, true, true, true};
 
-//Declarações das funções
+//Declara??es das fun??es
 void Inicializa(void);
 void DesenhaTexto(void *font, char vidas);
 void DesenhaTextoStroke(void *font, char *string);
@@ -35,7 +35,7 @@ void TeclasEspeciais(int key, int x, int y);
 void Teclado (unsigned char key, int x, int y);
 void Desenha();
 void DesenhaMenu();
-
+void Processamento();
 
 
 
@@ -91,12 +91,12 @@ void DesenhaObstaculo(){
 		//5
 		glColor3f(colorR[5], colorG[5], colorB[5]);
 		glVertex2f(80.0f, 145.0f);	glVertex2f(120.0f, 145.0f);
-		glVertex2f(120.0f, 105.0f); 	glVertex2f(80.0f, 105.0f);
+		glVertex2f(120.0f, 105.0f); glVertex2f(80.0f, 105.0f);
 		
 		//6
 		glColor3f(colorR[6], colorG[6], colorB[6]);
 		glVertex2f(125.0f, 145.0f);	glVertex2f(165.0f, 145.0f);
-		glVertex2f(165.0f, 105.0f); 	glVertex2f(125.0f, 105.0f);
+		glVertex2f(165.0f, 105.0f); glVertex2f(125.0f, 105.0f);
 		
 	//Terceira linha
 		//1
@@ -131,14 +131,14 @@ void DesenhaJogo(){
 	sprintf(aux, "%d", vidas);
 	
 	
-	//pra ajudar na mudança da cor do plano de fundo
+	//pra ajudar na mudan?a da cor do plano de fundo
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glClear(GL_COLOR_BUFFER_BIT);
 	//desenha texto das vidas
-	
+	Processamento();
 	glPushMatrix();
 	DesenhaObstaculo();
 	
@@ -206,16 +206,36 @@ void DesenhaJogo(){
 
 void TeclasEspeciais(int key, int x, int y)
 {
-	
-	
 	glutPostRedisplay();
 }
-
+void Processamento()
+{
+	int i,aux=0;
+	for(i=0;i<10;i++)
+	{
+		if(!numShow[i])
+		{
+			aux++;
+		}
+	}
+	if(aux==3)
+	{
+		for(i=0;i<10;i++)
+		{
+			numShow[i]=true;
+			colorR[i]=0.0;
+			colorG[i]=0.2;
+			colorB[i]=0.0;		
+		}
+		
+	}
+	
+}
 void Teclado (unsigned char key, int x, int y)
 {
 	if (key == 27)
 		exit(0);
-	switch(key){
+		switch(key){
 		case 96:
 		case 48:
 			numShow[0] = false;
@@ -295,7 +315,7 @@ void Teclado (unsigned char key, int x, int y)
 
 
 void Desenha(){
-	// Pegando os valores do tamanho da janela (útil caso mude de tamanho)
+	// Pegando os valores do tamanho da janela (?til caso mude de tamanho)
 	width = glutGet(GLUT_WINDOW_WIDTH); height = glutGet(GLUT_WINDOW_HEIGHT);
 	widX = width/100.0f; heiY = (height/100.0f);
 	// Controlador de qual parte do jogo mostrar
@@ -322,7 +342,7 @@ void GerenciaMouse(int button, int state, int x, int y)
          if (state == GLUT_DOWN){
          	//printf("%d %d %d\n", width,x,y);
          	
-         	//Colisão Quadrado superior direito
+         	//Colis?o Quadrado superior direito
          	if(x>70*widX && x<90*widX && y<height-66*heiY && y>height-86*heiY){ // muda cor quadrado superior direito
          		alteraCorObjeto(3);
 		  	} else if(x>5*widX && x<45*widX && y<height-20*heiY && y>height-28*heiY) { // muda cor retangulo inferior
@@ -351,13 +371,14 @@ int main()
 	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB );
 	glutInitWindowSize(400,400);  
 	glutInitWindowPosition(600,200);  
-	glutCreateWindow("Jogo da memória e aprendizado ecológico"); 
+	glutCreateWindow("Jogo da mem?ria e aprendizado ecol?gico"); 
 	glutDisplayFunc(Desenha);  
 	glutKeyboardFunc(Teclado);
+	
 //	glutMouseFunc(GerenciaMouse);
 //	glutSpecialFunc(TeclasEspeciais);
 	
-	//Declaração inicial dos tamanhos da janela, útil para função do mouse
+	//Declara??o inicial dos tamanhos da janela, ?til para fun??o do mouse
 	width = glutGet(GLUT_WINDOW_WIDTH); height = glutGet(GLUT_WINDOW_HEIGHT);
 	widX = width/100.0f; heiY = (height/100.0f);
 	
