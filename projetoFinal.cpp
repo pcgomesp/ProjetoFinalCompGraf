@@ -1,25 +1,36 @@
-//Alunos: Paulo Cesar Pereira Gomes; Eduardo de Oliveira ;Aurelio Jose ; Joao Paulo Brites
+//Alunos: Paulo Cesar Pereira Gomes; Eduardo de Oliveira 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glut.h>
+#include <time.h>
+
 
 int vidas = 3;
 float translatex = 47;
 float translatey = 2;
-char aux[5];
+int auxiliar;
+int current_view = 0;
+const int VIEW_MENU = 0;
+const int VIEW_GAME = 1;
+const int VIEW_GAME_END = 2;
+GLfloat win=0.0;
+GLfloat panX, panY;
 
 // Vari?veis de tamanho e propor??o da janela, para interesse na detec??o do mouse
 int width, height; 
 float widX, heiY; 
 //Controlador de qual tela o jogo vai mostrar
-int controllerMenu = 1; 
+int controllerMenu = 0; 
 // Vari?vel pros textos do jogo
 char* genericText;
 //Vetores com as cores e indica??o se as cartas est?o viradas
+int ordem[10];
+float xStep = 10;
 float BcolorR[] = {1.0, 0.0, 0.0, 1.0, 0.556900};
 float BcolorG[] = {0.0, 1.0, 0.0, 1.0, 0.419600};
 float BcolorB[] = {0.0, 0.0, 1.0, 0.0, 0.137300};
+float ang[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 float colorR[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 float colorG[] = {0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2};
 float colorB[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -36,15 +47,27 @@ void Teclado (unsigned char key, int x, int y);
 void Desenha();
 void DesenhaMenu();
 void Processamento();
-
-
+void sortearOrdem();
+void Anima(int value);
+void AnimaReseta(int value);
+void drawCircle(int, int, int, int, int);
+void drawTextStroke(void*, char*);
+void EspecificaParametrosVisualizacao(void);
 
 
 void Inicializa(void){
+	sortearOrdem();
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();  // o uso deste comando garante que o zoom 
+	                   // seja feito de forma absoluta e não relativa
+	//gluOrtho2D (-win, win +200.0, -win+ 0.0, win+200.0);
 	gluOrtho2D(0.0,200.0,0.0,200.0);
+
+	
+	
 }
+
 
 
 void DesenhaTexto(void *font, char vidas) 
@@ -60,7 +83,7 @@ void DesenhaTextoStroke(void *font, char *string)
 		glutStrokeCharacter(GLUT_STROKE_ROMAN,*string++); 
 }
 
-void DesenhaObstaculo(){
+/*void DesenhaObstaculo(){
 	
 	glBegin(GL_QUADS);
 	//Primeira linha
@@ -123,26 +146,228 @@ void DesenhaObstaculo(){
 		glVertex2f(120.0f, 15.0f); 	glVertex2f(80.0f, 15.0f);
 	glEnd();	
 	
+}*/
+void Anima(int value)
+{
+	ang[value] += xStep;
+
+	
+	if(ang[value] >= 90 && auxiliar<2){
+		colorR[value] = BcolorR[ordem[value]];
+        colorG[value] = BcolorG[ordem[value]];
+        colorB[value] = BcolorB[ordem[value]];
+	} 
+	if(ang[value] >= 180) {
+		ang[value] = 180;
+		Processamento();
+	} else {
+		glutTimerFunc(50,Anima, value);
+	}
+	glutPostRedisplay();
 }
 
+void AnimaReseta(int value)
+{
+	
+	ang[value] -= xStep;
 
+	
+	if(ang[value] < 90){
+		colorR[value] = 0.0;
+        colorG[value] = 0.2;
+        colorB[value] = 0.0;
+	} 
+	if(ang[value] <= 0) {
+		ang[value] = 0;
+	} else {
+		glutTimerFunc(50,AnimaReseta, value);
+	}
+	glutPostRedisplay();
+}
+
+void sortearOrdem(){
+	int complete = 0;
+	int oneCount= 0;
+	int twoCount= 0;
+	int threeCount= 0;
+	int fourCount= 0;
+	int fiveCount= 0;
+	int aux = 0;
+	srand ( time(NULL) );
+	while(complete < 10){
+		aux = (rand() % 5) + 1;
+		if(aux == 1){
+			if(oneCount < 2){
+				ordem[complete] = aux;
+				complete++;
+				oneCount++;
+			}
+			
+		} else if(aux == 2){
+			if(twoCount < 2){
+				ordem[complete] = aux;
+				complete++;
+				twoCount++;
+			}
+		} else if(aux == 3){
+			if(threeCount < 2){
+				ordem[complete] = aux;
+				complete++;
+				threeCount++;
+			}
+		} else if(aux == 4){
+			if(fourCount < 2){
+				ordem[complete] = aux;
+				complete++;
+				fourCount++;
+			}
+		} else {
+			if(fiveCount < 2){
+				ordem[complete] = aux;
+				complete++;
+				fiveCount++;
+			}
+		}
+		
+	}
+	
+	//Vizualizando os valores sorteados
+	for(int i = 0; i<10; i++){
+		printf("Item[%d]: %d\n", i,ordem[i]);
+	}
+	
+}
 
 void DesenhaJogo(){
-	sprintf(aux, "%d", vidas);
 	
-	
+	current_view= VIEW_GAME;
 	//pra ajudar na mudan?a da cor do plano de fundo
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glClear(GL_COLOR_BUFFER_BIT);
-	//desenha texto das vidas
-	Processamento();
-	glPushMatrix();
-	DesenhaObstaculo();
 	
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	//sortearOrdem();
 	glPushMatrix();
+	//DesenhaObstaculo();
+//Primeira linha
+	//7
+	glPushMatrix();
+	glPushMatrix();
+		glTranslatef(55, 170, 0.0f);
+		glRotatef(ang[7],0.0f,1.0f,0.0f);
+		glTranslatef(-55, -170, 0.0f);
+	glBegin(GL_QUADS);
+		glColor3f(colorR[7], colorG[7], colorB[7]);
+		glVertex2f(35.0f, 190.0f);	glVertex2f(75.0f, 190.0f);
+		glVertex2f(75.0f, 150.0f); 	glVertex2f(35.0f, 150.0f);
+	glEnd();
+	glPopMatrix();
+	//8
+	glPushMatrix();
+		glTranslatef(100, 170, 0.0f);
+		glRotatef(ang[8],0.0f,1.0f,0.0f);
+		glTranslatef(-100, -170, 0.0f);
+	glBegin(GL_QUADS);	
+		glColor3f(colorR[8], colorG[8], colorB[8]);
+		glVertex2f(80.0f, 190.0f);	glVertex2f(120.0f, 190.0f);
+		glVertex2f(120.0f, 150.0f);	glVertex2f(80.0f, 150.0f);
+	glEnd();
+	glPopMatrix();
+	//9
+	glPushMatrix();
+		glTranslatef(145, 170, 0.0f);
+		glRotatef(ang[9],0.0f,1.0f,0.0f);
+		glTranslatef(-145, -170, 0.0f);
+	glBegin(GL_QUADS);	
+		glColor3f(colorR[9], colorG[9], colorB[9]);
+		glVertex2f(125.0f, 190.0f);	glVertex2f(165.0f, 190.0f);
+		glVertex2f(165.0f, 150.0f);	glVertex2f(125.0f, 150.0f);
+	glEnd();
+	glPopMatrix();
+//Segunda linha
+	//4
+	glPushMatrix();
+		glTranslatef(55, 125, 0.0f);
+		glRotatef(ang[4],0.0f,1.0f,0.0f);
+		glTranslatef(-55, -125, 0.0f);
+	glBegin(GL_QUADS);	
+		glColor3f(colorR[4], colorG[4], colorB[4]);
+		glVertex2f(35.0f, 145.0f);	glVertex2f(75.0f, 145.0f);
+		glVertex2f(75.0f, 105.0f); 	glVertex2f(35.0f, 105.0f);
+	glEnd();
+	glPopMatrix();
+	//5	
+	glPushMatrix();
+		glTranslatef(100, 125, 0.0f);
+		glRotatef(ang[5],0.0f,1.0f,0.0f);
+		glTranslatef(-100, -125, 0.0f);
+	glBegin(GL_QUADS);	
+		glColor3f(colorR[5], colorG[5], colorB[5]);
+		glVertex2f(80.0f, 145.0f);	glVertex2f(120.0f, 145.0f);
+		glVertex2f(120.0f, 105.0f); glVertex2f(80.0f, 105.0f);
+	glEnd();
+	glPopMatrix();
+	//6
+	glPushMatrix();
+		glTranslatef(145, 125, 0.0f);	
+		glRotatef(ang[6],0.0f,1.0f,0.0f);
+		glTranslatef(-145, -125, 0.0f);
+	glBegin(GL_QUADS);	
+		glColor3f(colorR[6], colorG[6], colorB[6]);
+		glVertex2f(125.0f, 145.0f);	glVertex2f(165.0f, 145.0f);
+		glVertex2f(165.0f, 105.0f); glVertex2f(125.0f, 105.0f);
+	glEnd();
+	glPopMatrix();
+//Terceira linha
+	//1	
+	glPushMatrix();
+		glTranslatef(55, 80, 0.0f);	
+		glRotatef(ang[1],0.0f,1.0f,0.0f);
+		glTranslatef(-55, -80, 0.0f);	
+	glBegin(GL_QUADS);	
+		glColor3f(colorR[1], colorG[1], colorB[1]);
+		glVertex2f(35.0f, 100.0f);	glVertex2f(75.0f, 100.0f);
+		glVertex2f(75.0f, 60.0f); 	glVertex2f(35.0f, 60.0f);
+	glEnd();
+	glPopMatrix();
+	//2	
+	glPushMatrix();
+		glTranslatef(100, 80, 0.0f);
+		glRotatef(ang[2],0.0f,1.0f,0.0f);
+		glTranslatef(-100, -80, 0.0f);
+	glBegin(GL_QUADS);	
+		glColor3f(colorR[2], colorG[2], colorB[2]);
+		glVertex2f(80.0f, 100.0f);	glVertex2f(120.0f, 100.0f);
+		glVertex2f(120.0f, 60.0f); 	glVertex2f(80.0f, 60.0f);
+	glEnd();
+	glPopMatrix();
+	
+	//3
+	glPushMatrix();
+		glTranslatef(145, 80, 0.0f);
+		glRotatef(ang[3],0.0f,1.0f,0.0f);
+		glTranslatef(-145, -80, 0.0f);
+	glBegin(GL_QUADS);	
+		glColor3f(colorR[3], colorG[3], colorB[3]);
+		glVertex2f(125.0f, 100.0f);	glVertex2f(165.0f, 100.0f);
+		glVertex2f(165.0f, 60.0f); 	glVertex2f(125.0f, 60.0f);
+	glEnd();
+	glPopMatrix();
+//Quarta linha	
+	//0
+	glPushMatrix();
+		glTranslatef(100, 35, 0.0f);
+		glRotatef(ang[0],0.0f,1.0f,0.0f);
+		glTranslatef(-100, -35, 0.0f);
+	glBegin(GL_QUADS);	
+		glColor3f(colorR[0], colorG[0], colorB[0]);
+		glVertex2f(80.0f, 55.0f);	glVertex2f(120.0f, 55.0f);
+		glVertex2f(120.0f, 15.0f); 	glVertex2f(80.0f, 15.0f);
+	glEnd();
+	glPopMatrix();
 	
 	glColor3f(1.0f, 1.0f, 1.0f);
 	if(numShow[0]){
@@ -206,28 +431,60 @@ void DesenhaJogo(){
 
 void TeclasEspeciais(int key, int x, int y)
 {
+	if(current_view==VIEW_GAME)
+   {
+   
+   	 if(key == GLUT_KEY_UP ) {
+   	 	if(win > -40)
+   	 	{
+   	 	   win -= 20;
+           glMatrixMode(GL_PROJECTION);
+           glLoadIdentity();
+           gluOrtho2D (-win, win+200, -win, win+200);
+		}
+           
+           
+    	}
+     if(key== GLUT_KEY_DOWN   ) {
+     	  if (win < 40)
+     	  {
+     	  	win += 20;
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluOrtho2D (-win, win+200, -win, win+200);
+		   }
+           
+    	}
+   		
+	}
 	glutPostRedisplay();
 }
 void Processamento()
 {
-	int i,aux=0;
+	auxiliar = 0;
+	int i;
+	int aux1[3];
 	for(i=0;i<10;i++)
 	{
-		if(!numShow[i])
+		if(!numShow[i] && (auxiliar < 3))
 		{
-			aux++;
-		}
+			aux1[auxiliar] = i;
+			//printf("aux:%d\n", aux1[auxiliar]);
+			auxiliar++;
+		} 
 	}
-	if(aux==3)
+	if(auxiliar==3)
 	{
-		for(i=0;i<10;i++)
+		for(i=0;i<3;i++)
 		{
-			numShow[i]=true;
-			colorR[i]=0.0;
-			colorG[i]=0.2;
-			colorB[i]=0.0;		
+			glutTimerFunc(50,AnimaReseta, aux1[i]);
+			//ang[aux1[i]] = 0;
+			numShow[aux1[i]]=true;
+			//colorR[aux1[i]]=0.0;
+			//colorG[aux1[i]]=0.2;
+			//colorB[aux1[i]]=0.0;	
 		}
-		
+		auxiliar = 0;
 	}
 	
 }
@@ -239,72 +496,53 @@ void Teclado (unsigned char key, int x, int y)
 		case 96:
 		case 48:
 			numShow[0] = false;
-			colorR[0] = BcolorR[0];
-        	colorG[0] = BcolorG[0];
-        	colorB[0] = BcolorB[0];
+			glutTimerFunc(150, Anima, 0);
         	break;
         case 97:
         case 49:
         	numShow[1] = false;
-        	colorR[1] = BcolorR[1];
-        	colorG[1] = BcolorG[1];
-        	colorB[1] = BcolorB[1];
+        	glutTimerFunc(150, Anima, 1);
+  
         	break;
         case 98:
         case 50:
         	numShow[2] = false;
-        	colorR[2] = BcolorR[1];
-        	colorG[2] = BcolorG[1];
-        	colorB[2] = BcolorB[1];
+        	glutTimerFunc(150, Anima, 2);
         	break;
         case 99:
         case 51:
         	numShow[3] = false;
-        	colorR[3] = BcolorR[2];
-        	colorG[3] = BcolorG[2];
-        	colorB[3] = BcolorB[2];
+        	glutTimerFunc(150, Anima, 3);
         	break;	
         case 100:
         case 52:
         	numShow[4] = false;
-        	colorR[4] = BcolorR[3];
-        	colorG[4] = BcolorG[3];
-        	colorB[4] = BcolorB[3];
+        	glutTimerFunc(150, Anima, 4);
         	break;
         case 101:
         case 53:
         	numShow[5] = false;
-        	colorR[5] = BcolorR[4];
-        	colorG[5] = BcolorG[4];
-        	colorB[5] = BcolorB[4];
+        	glutTimerFunc(150, Anima, 5);
         	break;
         case 102:
         case 54:
         	numShow[6] = false;
-        	colorR[6] = BcolorR[3];
-        	colorG[6] = BcolorG[3];
-        	colorB[6] = BcolorB[3];
+        	glutTimerFunc(150, Anima, 6);
         	break;
         case 103:
         case 55:
         	numShow[7] = false;
-        	colorR[7] = BcolorR[0];
-        	colorG[7] = BcolorG[0];
-        	colorB[7] = BcolorB[0];
+        	glutTimerFunc(150, Anima, 7);
         	break;
         case 104:
         case 56:
         	numShow[8] = false;
-        	colorR[8] = BcolorR[4];
-        	colorG[8] = BcolorG[4];
-        	colorB[8] = BcolorB[4];
+        	glutTimerFunc(150, Anima, 8);
         	break;
         case 105:
         case 57:
         	numShow[9] = false;
-        	colorR[9] = BcolorR[2];
-        	colorG[9] = BcolorG[2];
-        	colorB[9] = BcolorB[2];
+        	glutTimerFunc(150, Anima, 9);
         	break;
         default:
         	break;
@@ -333,8 +571,79 @@ void Desenha(){
 }
 
 void DesenhaMenu(){
+	current_view = VIEW_MENU;
+	glClearColor(0.1, 0.1, 0.1, 1.000000);
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	
+	//glColor3f(0.137300, 0.419600, 0.556900);
+	
+
+	glClearColor(0.309800, 0.184300, 0.309800, 0.000000);
+	glPushMatrix();	
+		glTranslatef(10, 150, 0);   //posiçao do texto na tela
+		glScalef(0.09, 0.09, 0.09); // diminui o tamanho do fonte
+		//glRotatef(180, 1,0,0); // rotaciona o texto
+		glLineWidth(2); // define a espessura da linha
+		drawTextStroke(GLUT_BITMAP_HELVETICA_10,"   JOGO DA MEMORIA E  ");
+	glPopMatrix();
+	
+	glPushMatrix();	
+		glTranslatef(10, 130, 0);   //posiçao do texto na tela
+		glScalef(0.09, 0.09, 0.09); // diminui o tamanho do fonte
+		//glRotatef(180, 1,0,0); // rotaciona o texto
+		glLineWidth(2); // define a espessura da linha
+		drawTextStroke(GLUT_BITMAP_HELVETICA_10,"  APRENDIZADO ECOLOGICO ");
+	glPopMatrix();
+	
+	glPushMatrix();	
+		glTranslatef(10, 30, 0);   //posiçao do texto na tela
+		glScalef(0.05, 0.05, 0.05); // diminui o tamanho do fonte
+		//glRotatef(180, 1,0,0); // rotaciona o texto
+		glLineWidth(1); // define a espessura da linha
+		drawTextStroke(GLUT_BITMAP_HELVETICA_10,"Utilize as telas 1, 2, 3, 4, 5, 6, 7, 8, 9 para jogar");
+	glPopMatrix();
+	 
+
+	
+	//glColor3f(0.137300, 0.419600, 0.556900);
+	glPushMatrix();	
+		glTranslatef(40, 40, 0);  //posiçao do texto na tela
+		glScalef(0.08, 0.08, 0.08); // diminui o tamanho do fonte
+		//glRotatef(180, 1,0,0); // rotaciona o texto
+		//glLineWidth(2); // define a espessura da linha
+		drawTextStroke(GLUT_STROKE_ROMAN,"  Click para iniciar");
+	glPopMatrix();
+
+	glFlush();
+	
+	
 	
 }
+
+void MenuOpcoes(int op){
+	switch(op){
+		case 0: glutDisplayFunc(DesenhaMenu);
+			break;
+	}
+	glutPostRedisplay();
+}
+
+void MenuSecundario (){
+
+	
+	glutCreateMenu(MenuOpcoes);
+	glutAddMenuEntry("Voltar ao menu principal",0);
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+}
+
+void drawTextStroke(void *font, char *string) {  
+	// Exibe caractere a caractere
+	while(*string)
+		glutStrokeCharacter(GLUT_STROKE_ROMAN,*string++); 
+}
+
 /*
 void GerenciaMouse(int button, int state, int x, int y)
 {        
@@ -365,23 +674,48 @@ void GerenciaMouse(int button, int state, int x, int y)
     glutPostRedisplay();
 }
 */
+void GerenciaMouse(int button, int state, int x, int y){
+	if (current_view == VIEW_MENU) {
+		if (button == GLUT_LEFT_BUTTON) {
+			glutDisplayFunc(DesenhaJogo);  
+			
+		}
+}
+	if (current_view == VIEW_GAME) {
+		if(button == GLUT_RIGHT_BUTTON){
+			MenuSecundario();
+		}
+	
+}
+	 glutPostRedisplay();	
+	}
+
+   	
+   
+ 
+	
+   
+
+
+
+
 int main()
 {
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);     
 	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB );
-	glutInitWindowSize(400,400);  
+	glutInitWindowSize(500,500);  
 	glutInitWindowPosition(600,200);  
-	glutCreateWindow("Jogo da mem?ria e aprendizado ecol?gico"); 
-	glutDisplayFunc(Desenha);  
+	glutCreateWindow("Jogo da memoria e aprendizado ecologico"); 
+	
+	glutDisplayFunc(DesenhaMenu);  
 	glutKeyboardFunc(Teclado);
 	
-//	glutMouseFunc(GerenciaMouse);
-//	glutSpecialFunc(TeclasEspeciais);
+	glutMouseFunc(GerenciaMouse);
+	glutSpecialFunc(TeclasEspeciais);
 	
 	//Declara??o inicial dos tamanhos da janela, ?til para fun??o do mouse
-	width = glutGet(GLUT_WINDOW_WIDTH); height = glutGet(GLUT_WINDOW_HEIGHT);
-	widX = width/100.0f; heiY = (height/100.0f);
-	
+	//width = glutGet(GLUT_WINDOW_WIDTH); height = glutGet(GLUT_WINDOW_HEIGHT);
+	//widX = width/100.0f; heiY = (height/100.0f);
 	
 	Inicializa(); 
 	glutMainLoop();
