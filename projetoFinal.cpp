@@ -14,8 +14,8 @@ int current_view = 0;
 const int VIEW_MENU = 0;
 const int VIEW_GAME = 1;
 const int VIEW_GAME_END = 2;
-GLfloat win=0.0;
-GLfloat panX, panY;
+GLfloat win=0.0,win2=0.0;
+GLfloat panX=0.0, panY=0.0;
 
 // Vari?veis de tamanho e propor??o da janela, para interesse na detec??o do mouse
 int width, height; 
@@ -434,27 +434,76 @@ void TeclasEspeciais(int key, int x, int y)
 	if(current_view==VIEW_GAME)
    {
    
-   	 if(key == GLUT_KEY_UP ) {
-   	 	if(win > -40)
-   	 	{
+   	 if(key == GLUT_KEY_DOWN ) {
+   	 	
    	 	   win -= 20;
+   	 	   win2+=20;
            glMatrixMode(GL_PROJECTION);
            glLoadIdentity();
-           gluOrtho2D (-win, win+200, -win, win+200);
-		}
-           
-           
-    	}
-     if(key== GLUT_KEY_DOWN   ) {
-     	  if (win < 40)
-     	  {
+           gluOrtho2D (-panX, panY+200, -win, win2+200);
+		
+    }
+    	
+    if(key== GLUT_KEY_UP    ) {
+     	  
+     	  	
      	  	win += 20;
+     	  	win2-=20;
             glMatrixMode(GL_PROJECTION);
             glLoadIdentity();
-            gluOrtho2D (-win, win+200, -win, win+200);
-		   }
+            gluOrtho2D (-panX, panY+200, -win, win2+200);
+		   
            
     	}
+    ///poscionar o camera em cima da carta
+      if(key== GLUT_KEY_RIGHT) {
+     	  
+     	  	panX += 20;
+     	  	panY -= 20;
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluOrtho2D (-panX, panY+200, -win, win2+200);
+		   
+           
+    	} 
+    	 if(key== GLUT_KEY_LEFT  ) {
+     	  
+     	  	panX-= 20;
+     	  	panY += 20;
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluOrtho2D (-panX, panY+200, -win, win2+200);
+		   
+           
+    	} 
+		
+		 if(key== GLUT_KEY_PAGE_DOWN  ) {
+     	  
+     	  	panX+= 20;
+     	  	panY += 20;
+     	  	win+=20;
+     	  	win2+=20;
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluOrtho2D (-panX, panY+200, -win, win2+200);
+		   
+           
+    	}   
+    	
+		 if(key== GLUT_KEY_PAGE_UP ) {
+     	  
+     	  	panX -= 20;
+     	  	panY -= 20;
+     	  	win  -= 20;
+     	  	win2 -=20;
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluOrtho2D (-panX, panY+200, -win, win2+200);
+		   
+           
+    	}     
+   
+    	
    		
 	}
 	glutPostRedisplay();
@@ -544,6 +593,14 @@ void Teclado (unsigned char key, int x, int y)
         	numShow[9] = false;
         	glutTimerFunc(150, Anima, 9);
         	break;
+       
+       case 114:
+       case  82:
+       	   glMatrixMode(GL_PROJECTION);
+           glLoadIdentity();
+           gluOrtho2D(0.0,200.0,0.0,200.0);
+           break;
+	    	
         default:
         	break;
     }
